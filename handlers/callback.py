@@ -18,9 +18,6 @@ async def get_queryl(callback:CallbackQuery):
     await help(callback.message)
     await callback.answer("Обрабатывается, подождите!")
 
-@callbacks_router.callback_query(F.data == "menu_call_input")
-async def get_query_nput(callback:CallbackQuery):
-    await callback.answer("Скоро тут смогут быть добавлены ваши задач!")
 
 @callbacks_router.callback_query(F.data == "menu_call_data_output")
 async def get_query_li(callback:CallbackQuery):
