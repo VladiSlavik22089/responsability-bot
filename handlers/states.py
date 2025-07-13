@@ -33,11 +33,9 @@ async def input_deal(message:Message,state: FSMContext):
 @fsm_router.message(Deal.timer)
 async def get_query_nput(message:Message, state: FSMContext):
     await state.update_data(timer=message.text)
-    await message.answer("Сообщение обрабатывается!")
     data = await state.get_data()
     await message.answer(f"Я напомню вам про задачу - {data["deal"]}, ровно в {data["timer"]}")
     id_user = message.from_user.id
-
 
 @fsm_router.callback_query(F.data == "menu_call_delete")
 async def get_query_nput(callback:CallbackQuery, state: FSMContext):
