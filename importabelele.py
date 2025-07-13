@@ -6,18 +6,22 @@ from aiogram.enums import ParseMode
 
 from handlers.callback import callbacks_router
 from handlers.commands import command_router
-
+from aiogram.fsm.storage.memory import MemoryStorage
 from dotenv import load_dotenv
 import os
 
 import asyncio
 
+from handlers.states import fsm_router
+
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
-
-dp = Dispatcher()
+bot = Bot(TOKEN)
+storage = MemoryStorage()
+dp = Dispatcher(bot = bot,storage = storage)
 dp.include_router(command_router)
 dp.include_router(callbacks_router)
+dp.include_router(fsm_router)
 
 
 async def main():
