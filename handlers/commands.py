@@ -16,6 +16,7 @@ async def command_start_handler(message: Message) -> None:
         photo='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5bMKagpOOdp9v7P3nl0PFpN7LSPTjGo6anA&s',caption = start_message, reply_markup= start_kb,parse_mode="HTML")
 
 
+
 @command_router.message(Command("about"))
 async def about(message:Message) -> None:
     b = "Я - бот, который может помочь вам сделать все, что вы захотите в будущем всего с помощью нескольких напоминаний"
