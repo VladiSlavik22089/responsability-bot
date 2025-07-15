@@ -12,7 +12,7 @@ import os
 
 import asyncio
 
-from handlers.states import fsm_router
+from handlers.fsm_dopler import fsm_router
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")

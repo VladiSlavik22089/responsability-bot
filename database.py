@@ -5,31 +5,31 @@ cursor = conn.cursor()
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS deals (
 id_note INTEGER PRIMARY KEY AUTOINCREMENT,
-id_user INT,
+user_id INT,
 name VARCHAR(50),
-time VARCHAR(50),
-f INT
+time VARCHAR(2),
+data VARCHAR(2)
 )''')
 conn.commit()
-def add_deal(user_id,name,time,f):
+
+def add_deal(user_id,name,data,time):
     cursor.execute('''
-    INSERT INTO deals (id_user,name,time,f)
+    INSERT INTO deals (user_id,name,data,time)
     VALUES (?,?,?,?)
     
-    ''',(user_id,name,time,f))
+    ''',(user_id,name,data,time))
     conn.commit()
 def show_db():
     all_lines = cursor.execute('''
         SELECT * FROM deals  
     ''')
     return all_lines.fetchall()
+
 def show_deals(user_id):
-    all_deals = show_db()
-    for i in range(len(all_deals)):
-        print(i)
-        print(all_deals)
-        print(user_id)
-        if int(all_deals[i][1]) == int(user_id):
-            print("123456")
-            print(all_deals[i][2],all_deals[i][3])
+    all_lines = cursor.execute('''
+            SELECT * FROM deals WHERE id_user = ?
+        ''', (user_id,))
     conn.commit()
+    return all_lines.fetchall()
+
+show_db()

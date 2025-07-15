@@ -11,6 +11,5 @@ menu_kb = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="Список задач", callback_data="menu_call_data_output")],
         [InlineKeyboardButton(text="Добавление задачи",callback_data="menu_call_input")],
         [InlineKeyboardButton(text="Удаление задачи",callback_data="menu_call_delete")],
-        [InlineKeyboardButton(text="Id задачи",callback_data="menu_call_id's")]
     ]
 )
