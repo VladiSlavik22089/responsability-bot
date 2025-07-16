@@ -41,7 +41,7 @@ async def data_to_timer_fsm(message:Message,state:FSMContext):
         a = datetime.strptime(message.text, "%d.%m.%Y")
         await state.update_data(date=a)
         await state.set_state(Deal.time)
-    except Exception:
+    except Exception(BaseException):
         await message.answer("Вы ошиблись, операция прервана")
         await state.clear()
 
@@ -49,6 +49,7 @@ async def data_to_timer_fsm(message:Message,state:FSMContext):
 @fsm_router.message(Deal.time)
 async def timer_to_ans_fsm(message:Message,state: FSMContext):
     try:
+        await message.answer("Подтвердите операцию, набрав Готово")
         a = ""
         a = datetime.strptime(message.text,"%H:%M")
         await state.update_data(time=a)
@@ -63,5 +64,6 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
 @fsm_router.message(Deal.sleep)
 async def ans_to_sleep_fsm(message:Message, state:FSMContext):
     data = await state.get_data()
-    await message.answer(f"Готово! Я напомню вас про задачу : ({data["deal"]}) {data["date"]} в {data["time"]}")
+    await message.reply(f"Готово! Я напомню вас про задачу : {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
+    print(show_db())
     await state.clear()
