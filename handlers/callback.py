@@ -15,6 +15,8 @@ async def get_query(callback:CallbackQuery):
 
 @callbacks_router.callback_query(F.data == "help")
 async def get_queryl(callback:CallbackQuery):
+    await callback.message.edit_caption(
+        caption="<b>Здравствуй!</b> Я — ответственный за твои задачи бот. Рад видеть, что вы будете пользоваться моим функционалом. Удачного пользования!")
     await help(callback.message)
     await callback.answer("Обрабатывается, подождите!")
 

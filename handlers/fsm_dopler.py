@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from database import add_deal,show_db,show_deals
+from database import add_deal,show_db,show_deals,show_date,show_time
 from datetime import datetime
 
 
@@ -29,7 +29,7 @@ async def menu_to_name_fsm(callback:CallbackQuery, state: FSMContext):
 
 @fsm_router.message(Deal.deal)
 async def name_to_data_fsm(message:Message,state: FSMContext):
-    await message.answer("Почти готово, введите год.месяц.дату напоминания")
+    await message.answer("Отлично, введите дату напоминания в формате число, месяц, год")
     await state.update_data(deal=message.text)
     await state.set_state(Deal.date)
 
@@ -37,12 +37,16 @@ async def name_to_data_fsm(message:Message,state: FSMContext):
 @fsm_router.message(Deal.date)
 async def data_to_timer_fsm(message:Message,state:FSMContext):
     try:
-        await message.answer("Почти готово, введите время напоминания Ч:М")
-        a = datetime.strptime(message.text, "%d.%m.%Y")
-        await state.update_data(date=a)
-        await state.set_state(Deal.time)
-    except Exception(BaseException):
-        await message.answer("Вы ошиблись, операция прервана")
+        a = datetime.strptime(message.text.strip(), "%d.%m.%Y")
+        if a < datetime.now():
+            await message.answer("Эта дата уже прошла, операция прервана, будьте внимательнее!")
+            await state.clear()
+        else:
+            await state.update_data(date=a)
+            await message.answer("Почти готово, введите время напоминания")
+            await state.set_state(Deal.time)
+    except ValueError:
+        await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
         await state.clear()
 
 
@@ -55,16 +59,17 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         await state.update_data(time=a)
         id_user = message.from_user.id
         data = await state.get_data()
-        add_deal(id_user, data["deal"], str(data["date"])[:10], str(data["time"])[10:])
+        print(data)
+        add_deal(id_user, data["deal"], str(data["date"])[:10], str(data["time"])[11:])
         await state.set_state(Deal.sleep)
     except TypeError and ValueError:
-        await message.answer("Вы ошиблись, операция прервана")
+        await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
         await state.clear()
 
 @fsm_router.message(Deal.sleep)
 async def ans_to_sleep_fsm(message:Message, state:FSMContext):
     data = await state.get_data()
-    await message.reply(f"Готово! Я напомню вас про задачу : {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
+    await message.reply(f"Готово! Я напомню вам про задачу: {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
     print(show_db())
     await state.clear()
 
@@ -75,9 +80,20 @@ async def get_note_list(callback:CallbackQuery, state: FSMContext):
     await callback.answer("Сообщение обрабатывается!")
     await callback.message.answer("Ваши дела:")
     id_user = callback.from_user.id
+    a = show_date(id_user)
     b = show_deals(id_user)
+    c = show_time(id_user)
     f = 1
     for i in b:
-        await callback.message.answer(text=f"{f}) {i[0]}")
-        f += 1
+        k = 1
+        for j in a:
+            for m in c:
+                k += 1
+                if k <= 2:
+                    await callback.message.answer(text=f"{f}) Я напомню Вам про: {i[0]} {str(j[0])[:10]} числа ровно в{str(m[0])[10:]}")
+                    f += 1
+                else:
+                    break
     await state.clear()
+
+#func for deleting user's deals
