@@ -6,9 +6,9 @@ from aiogram.filters import Command
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from database import add_deal,show_db,show_deals
+from database import add_deal, show_db, show_deals, conn
 from datetime import datetime
-
+cursor = conn.cursor()
 #creating router and class for fsm_classes
 fsm_router = Router()
 class Deal(StatesGroup):
@@ -16,6 +16,7 @@ class Deal(StatesGroup):
     date = State()
     time = State()
     sleep = State()
+    delete = State()
 
 #fsm_router for adding new states
 @fsm_router.callback_query(F.data == "menu_call_input")
@@ -87,3 +88,35 @@ async def get_note_list(callback:CallbackQuery, state: FSMContext):
 
 
 #func for deleting user's deals
+@fsm_router.callback_query(F.data == "menu_call_delete")
+async def get_deleting_id(callback:CallbackQuery, state: FSMContext):
+    await callback.answer("Сообщение обрабатывается!")
+    await callback.message.answer("Вот список ваших дел. Укажите порядковый № того, которого вы хотите удалить.")
+    id_user = callback.from_user.id
+    b = show_deals(id_user)
+    d = ""
+    f = 1
+    for i in range(len(b)):
+        d += f"{f}) {b[i][0]}\n"
+        f += 1
+    await callback.message.answer(d)
+    await state.set_state(Deal.delete)
+
+@fsm_router.message(Deal.delete)
+async def deleting_func(message:Message, state:FSMContext):
+    id_user = message.from_user.id
+    b = show_deals(id_user)
+    id_s = []
+    idm = []
+    f = 1
+    for i in range(len(b)):
+        id_s.append([f, b[i][0]])
+        idm.append(f)
+        f += 1
+    # if message.F in idm:
+    #     a = cursor.execute('''
+    #         DELETE FROM deals WHERE
+    #         ''')
+    # else:
+    #     await message.reply("Цифра не верна, операция прервана")
+    #     await state.clear()
