@@ -6,13 +6,11 @@ from aiogram.filters import Command
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from database import add_deal,show_db,show_deals,show_date,show_time
+from database import add_deal,show_db,show_deals
 from datetime import datetime
 
-
+#creating router and class for fsm_classes
 fsm_router = Router()
-
-
 class Deal(StatesGroup):
     deal = State()
     date = State()
@@ -45,7 +43,7 @@ async def data_to_timer_fsm(message:Message,state:FSMContext):
             await state.update_data(date=a)
             await message.answer("Почти готово, введите время напоминания")
             await state.set_state(Deal.time)
-    except ValueError:
+    except TypeError and ValueError:
         await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
         await state.clear()
 
@@ -59,7 +57,6 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         await state.update_data(time=a)
         id_user = message.from_user.id
         data = await state.get_data()
-        print(data)
         add_deal(id_user, data["deal"], str(data["date"])[:10], str(data["time"])[11:])
         await state.set_state(Deal.sleep)
     except TypeError and ValueError:
@@ -70,7 +67,6 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
 async def ans_to_sleep_fsm(message:Message, state:FSMContext):
     data = await state.get_data()
     await message.reply(f"Готово! Я напомню вам про задачу: {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
-    print(show_db())
     await state.clear()
 
 #func for pushing user's list of deals
@@ -80,20 +76,14 @@ async def get_note_list(callback:CallbackQuery, state: FSMContext):
     await callback.answer("Сообщение обрабатывается!")
     await callback.message.answer("Ваши дела:")
     id_user = callback.from_user.id
-    a = show_date(id_user)
     b = show_deals(id_user)
-    c = show_time(id_user)
+    d = ""
     f = 1
-    for i in b:
-        k = 1
-        for j in a:
-            for m in c:
-                k += 1
-                if k <= 2:
-                    await callback.message.answer(text=f"{f}) Я напомню Вам про: {i[0]} {str(j[0])[:10]} числа ровно в{str(m[0])[10:]}")
-                    f += 1
-                else:
-                    break
+    for i in range(len(b)):
+        d += f"{f}) Я напомню Вам про: {b[i][0]} {str(b[i][1])[:10]} числа ровно в {str(b[i][2])}\n"
+        f += 1
+    await callback.message.reply(d)
     await state.clear()
+
 
 #func for deleting user's deals

@@ -27,22 +27,9 @@ def show_db():
 
 def show_deals(user_id):
     all_lines = cursor.execute('''
-            SELECT name FROM deals WHERE user_id = ?
+            SELECT name,data,time FROM deals WHERE user_id = ?
         ''', (user_id,))
     conn.commit()
     return all_lines.fetchall()
 
-def show_date(user_id):
-    all_lines = cursor.execute('''
-            SELECT data FROM deals WHERE user_id = ?
-        ''', (user_id,))
-    conn.commit()
-    return all_lines.fetchall()
-
-def show_time(user_id):
-    all_lines = cursor.execute('''
-            SELECT time FROM deals WHERE user_id = ?
-        ''', (user_id,))
-    conn.commit()
-    return all_lines.fetchall()
 show_db()
