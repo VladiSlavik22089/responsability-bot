@@ -55,9 +55,9 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         await state.update_data(time=a)
         id_user = message.from_user.id
         data = await state.get_data()
-        add_deal(id_user, data["deal"], data["date"], data["time"])
+        add_deal(id_user, data["deal"], str(data["date"])[:10], str(data["time"])[10:])
         await state.set_state(Deal.sleep)
-    except Exception(BaseException):
+    except TypeError and ValueError:
         await message.answer("Вы ошиблись, операция прервана")
         await state.clear()
 
@@ -67,4 +67,17 @@ async def ans_to_sleep_fsm(message:Message, state:FSMContext):
     await message.reply(f"Готово! Я напомню вас про задачу : {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
     print(show_db())
     await state.clear()
-    #
+
+#func for pushing user's list of deals
+
+@fsm_router.callback_query(F.data == "menu_call_data_output")
+async def get_note_list(callback:CallbackQuery, state: FSMContext):
+    await callback.answer("Сообщение обрабатывается!")
+    await callback.message.answer("Ваши дела:")
+    id_user = callback.from_user.id
+    b = show_deals(id_user)
+    f = 1
+    for i in b:
+        await callback.message.answer(text=f"{f}) {i[0]}")
+        f += 1
+    await state.clear()
