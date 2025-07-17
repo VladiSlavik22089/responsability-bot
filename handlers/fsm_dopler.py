@@ -90,7 +90,7 @@ async def ans_to_reminder_fsm(message:Message, state:FSMContext):
     if difference > 0:
         await asyncio.sleep(difference)
 
-        await message.answer("Напоминание")
+        await message.answer(f"Напоминанию, вы хотели сделать {data['deal']} в это время ")
     await state.clear()
 
 #func for pushing user's list of deals
