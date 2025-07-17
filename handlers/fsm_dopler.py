@@ -1,3 +1,5 @@
+import time
+
 from aiogram.fsm.state import State,StatesGroup
 from aiogram import Router
 from aiogram.types import Message
@@ -15,6 +17,7 @@ class Deal(StatesGroup):
     time = State()
     sleep = State()
     delete = State()
+    reminder = State()
 
 #fsm_router for adding new states
 @fsm_router.callback_query(F.data == "menu_call_input")
@@ -39,7 +42,7 @@ async def data_to_timer_fsm(message:Message,state:FSMContext):
             await message.answer("Эта дата уже прошла, операция прервана, будьте внимательнее!")
             await state.clear()
         else:
-            await state.update_data(date=a)
+            await state.update_data(date=str(a)[:10])
             await message.answer("Почти готово, введите время напоминания")
             await state.set_state(Deal.time)
     except TypeError and ValueError:
@@ -53,20 +56,20 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         await message.answer("Подтвердите операцию, набрав Готово")
         a = ""
         a = datetime.strptime(message.text,"%H:%M")
-        await state.update_data(time=a)
+        await state.update_data(time=str(a)[11:])
         id_user = message.from_user.id
         data = await state.get_data()
-        add_deal(id_user, data['deal'], str(data['date'])[:10], str(data['time'])[11:])
+        add_deal(id_user, data['deal'], str(data['date']), str(data['time']))
         await state.set_state(Deal.sleep)
     except TypeError and ValueError:
         await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
         await state.clear()
 
 @fsm_router.message(Deal.sleep)
-async def ans_to_sleep_fsm(message:Message, state:FSMContext):
+async def ans_to_reminder_fsm(message:Message, state:FSMContext):
     data = await state.get_data()
-    await message.reply(f"Готово! Я напомню вам про задачу: {data['deal']} {str(data['date'])[:10]} в {str(data['time'])[10:]}")
-    await state.clear()
+    await message.reply(f"Готово! Я напомню вам про задачу: {data['deal']} {str(data['date'])} в {str(data['time'])}")
+    await state.set_state(Deal.reminder)
 
 #func for pushing user's list of deals
 
@@ -115,3 +118,29 @@ async def deleting_func(message:Message, state:FSMContext):
     else:
         await message.reply("Цифра не верна, операция прервана")
         await state.clear()
+
+
+#func for reminding user's deals
+@fsm_router.message(Deal.reminder)
+async def reminder(message:Message, state:FSMContext):
+    now = datetime.now()
+    current_time = now.strftime("%H:%M")
+    current_date = now.strftime("%d.%m.%Y")
+    data = await state.get_data()
+    print(current_time, current_date)
+    time = current_time.split(":")
+    date = current_date.split(".")
+    cur_time = data['time'].split(":")
+    cur_date = data['date'].split("-")
+
+    for i in range(len(time)):
+        time[i] = int(time[i])
+    for i in range(len(data)):
+        date[i] = int(date[i])
+    for i in range(len(cur_time)):
+        cur_time[i] = int(cur_time[i])
+    for i in range(len(cur_date)):
+        cur_date[i] = int(cur_date[i])
+
+
+    print(time, date, cur_time, cur_date)
