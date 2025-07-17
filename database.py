@@ -1,4 +1,5 @@
 import sqlite3
+from mailbox import Message
 
 conn = sqlite3.connect("deals.db")
 cursor = conn.cursor()
@@ -32,4 +33,16 @@ def show_deals(user_id):
     conn.commit()
     return all_lines.fetchall()
 
+def show_deals_del(user_id):
+    all_lines = cursor.execute('''
+            SELECT name,id_note FROM deals WHERE user_id = ?
+        ''', (user_id,))
+    conn.commit()
+    return all_lines.fetchall()
+
+def deletings_func(id_note: int, user_id: int):
+    a = cursor.execute('''
+    DELETE FROM deals WHERE id_note = ? AND user_id = ?
+    ''', (id_note, user_id))
+    conn.commit()
 show_db()

@@ -1,14 +1,12 @@
-
 from aiogram.fsm.state import State,StatesGroup
 from aiogram import Router
 from aiogram.types import Message
-from aiogram.filters import Command
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
-from database import add_deal, show_db, show_deals, conn
+from database import add_deal, show_deals, conn,show_db,deletings_func,show_deals_del
 from datetime import datetime
-cursor = conn.cursor()
+
 #creating router and class for fsm_classes
 fsm_router = Router()
 class Deal(StatesGroup):
@@ -58,7 +56,7 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         await state.update_data(time=a)
         id_user = message.from_user.id
         data = await state.get_data()
-        add_deal(id_user, data["deal"], str(data["date"])[:10], str(data["time"])[11:])
+        add_deal(id_user, data['deal'], str(data['date'])[:10], str(data['time'])[11:])
         await state.set_state(Deal.sleep)
     except TypeError and ValueError:
         await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
@@ -67,7 +65,7 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
 @fsm_router.message(Deal.sleep)
 async def ans_to_sleep_fsm(message:Message, state:FSMContext):
     data = await state.get_data()
-    await message.reply(f"Готово! Я напомню вам про задачу: {data["deal"]} {str(data["date"])[:10]} в {str(data["time"])[10:]}")
+    await message.reply(f"Готово! Я напомню вам про задачу: {data['deal']} {str(data['date'])[:10]} в {str(data['time'])[10:]}")
     await state.clear()
 
 #func for pushing user's list of deals
@@ -93,7 +91,7 @@ async def get_deleting_id(callback:CallbackQuery, state: FSMContext):
     await callback.answer("Сообщение обрабатывается!")
     await callback.message.answer("Вот список ваших дел. Укажите порядковый № того, которого вы хотите удалить.")
     id_user = callback.from_user.id
-    b = show_deals(id_user)
+    b = show_deals_del(id_user)
     d = ""
     f = 1
     for i in range(len(b)):
@@ -105,18 +103,15 @@ async def get_deleting_id(callback:CallbackQuery, state: FSMContext):
 @fsm_router.message(Deal.delete)
 async def deleting_func(message:Message, state:FSMContext):
     id_user = message.from_user.id
-    b = show_deals(id_user)
-    id_s = []
-    idm = []
+    b = show_deals_del(id_user)
+    idm = ""
     f = 1
     for i in range(len(b)):
-        id_s.append([f, b[i][0]])
-        idm.append(f)
+        idm += str(f)
         f += 1
-    # if message.F in idm:
-    #     a = cursor.execute('''
-    #         DELETE FROM deals WHERE
-    #         ''')
-    # else:
-    #     await message.reply("Цифра не верна, операция прервана")
-    #     await state.clear()
+    if message.text in idm:
+        name = b[int(message.text) - 1][1]
+        deletings_func(name, id_user)
+    else:
+        await message.reply("Цифра не верна, операция прервана")
+        await state.clear()

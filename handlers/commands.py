@@ -1,11 +1,8 @@
-import asyncio
-
 from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram import F
 from keyboards.inline import start_kb,menu_kb
-from keyboards.reply import keyboard
 command_router = Router()
 
 
