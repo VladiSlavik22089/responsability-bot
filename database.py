@@ -1,5 +1,4 @@
 import sqlite3
-from mailbox import Message
 
 conn = sqlite3.connect("deals.db")
 cursor = conn.cursor()
