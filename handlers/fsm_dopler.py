@@ -6,6 +6,7 @@ from aiogram.types import Message
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
+from keyboards.inline import menu_kb
 from database import add_deal, show_deals, conn,show_db,deletings_func,show_deals_del
 from datetime import datetime
 import datetime as dt
@@ -23,13 +24,13 @@ class Deal(StatesGroup):
 @fsm_router.callback_query(F.data == "menu_call_input")
 async def menu_to_name_fsm(callback:CallbackQuery, state: FSMContext):
     await callback.answer("Сообщение обрабатывается!")
-    await callback.message.answer("Введите название занятия для напоминания")
+    await callback.message.answer("Чем займемся?")
     await state.set_state(Deal.deal)
 
 
 @fsm_router.message(Deal.deal)
 async def name_to_data_fsm(message:Message,state: FSMContext):
-    await message.answer("Отлично, введите дату напоминания в формате число, месяц, год")
+    await message.answer("Отлично, введите дату напоминания в формате число, месяц, год (например, 01.01.2025)")
     await state.update_data(deal=message.text)
     await state.set_state(Deal.date)
 
@@ -42,14 +43,14 @@ async def data_to_timer_fsm(message:Message,state:FSMContext):
         b = datetime.today()
         print(type(b))
         if a.date() < b.date():
-            await message.answer("Эта дата уже прошла, операция прервана, будьте внимательнее!")
+            await message.answer("Эта дата уже прошла, операция прервана, будь внимательнее!",reply_markup = menu_kb)
             await state.clear()
         elif a.date() >= b.date():
             await state.update_data(date=str(a)[:10])
             await message.answer("Почти готово, введите время напоминания")
             await state.set_state(Deal.time)
     except TypeError and ValueError:
-        await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
+        await message.answer("Вы ошиблись, операция прервана, будь внимательнее!",reply_markup = menu_kb)
         await state.clear()
 
 
@@ -60,18 +61,18 @@ async def timer_to_ans_fsm(message:Message,state: FSMContext):
         a = ""
         a = datetime.strptime(message.text,"%H:%M")
         await state.update_data(time=str(a)[11:16])
-        id_user = message.from_user.id
-        data = await state.get_data()
-        add_deal(id_user, data['deal'], str(data['date']), str(data['time']))
+
         await state.set_state(Deal.sleep)
     except TypeError and ValueError:
-        await message.answer("Вы ошиблись, операция прервана, будьте внимательнее!")
+        await message.answer("Вы ошиблись, операция прервана, будь внимательнее!",reply_markup = menu_kb)
         await state.clear()
 
 @fsm_router.message(Deal.sleep)
 async def ans_to_reminder_fsm(message:Message, state:FSMContext):
+    id_user = message.from_user.id
     data = await state.get_data()
-    await message.reply(f"Готово! Я напомню вам про задачу: {data['deal']} {str(data['date'])} в {str(data['time'])}")
+    task_id = add_deal(id_user, data['deal'], str(data['date']), str(data['time']))
+    await message.reply(f"Готово!\n Я напомню вам про задачу: {data['deal']} {str(data['date'])} в {str(data['time'])}")
     now = datetime.now()
     current_time = now.strftime("%H:%M")
     current_date = now.strftime("%d.%m.%Y")
@@ -90,7 +91,8 @@ async def ans_to_reminder_fsm(message:Message, state:FSMContext):
     if difference > 0:
         await asyncio.sleep(difference)
 
-        await message.answer(f"Напоминанию, вы хотели сделать {data['deal']} в это время ")
+        await message.answer(f"Напоминанию, вы хотели сделать {data['deal']} в это время")
+        deletings_func(task_id)
     await state.clear()
 
 #func for pushing user's list of deals
@@ -98,32 +100,38 @@ async def ans_to_reminder_fsm(message:Message, state:FSMContext):
 @fsm_router.callback_query(F.data == "menu_call_data_output")
 async def get_note_list(callback:CallbackQuery, state: FSMContext):
     await callback.answer("Сообщение обрабатывается!")
-    await callback.message.answer("Ваши дела:")
     id_user = callback.from_user.id
     b = show_deals(id_user)
-    d = ""
-    f = 1
-    for i in range(len(b)):
-        d += f"{f}) Я напомню Вам про: {b[i][0]} {str(b[i][1])[:10]} числа ровно в {str(b[i][2])}\n"
-        f += 1
-    await callback.message.reply(d)
+    if len(b) == 0:
+        await callback.message.answer("Список дел пуст. Для взаимодействия с этой командой, вам нужно сначала добавить задачу")
+    else:
+        await callback.message.answer("Вот список ваших активных дел:")
+        d = ""
+        f = 1
+        for i in range(len(b)):
+            d += f"{f}) Я напомню Вам про: {b[i][0]} {str(b[i][1])[:10]} числа ровно в {str(b[i][2])}\n"
+            f += 1
+        await callback.message.reply(d)
     await state.clear()
 
 
 #func for deleting user's deals
 @fsm_router.callback_query(F.data == "menu_call_delete")
 async def get_deleting_id(callback:CallbackQuery, state: FSMContext):
-    await callback.answer("Сообщение обрабатывается!")
-    await callback.message.answer("Вот список ваших дел. Укажите порядковый № того, которого вы хотите удалить.")
     id_user = callback.from_user.id
     b = show_deals_del(id_user)
-    d = ""
-    f = 1
-    for i in range(len(b)):
-        d += f"{f}) {b[i][0]}\n"
-        f += 1
-    await callback.message.answer(d)
-    await state.set_state(Deal.delete)
+    await callback.answer("Сообщение обрабатывается!")
+    if len(b) == 0:
+        await callback.message.answer("Пока что здесь ничего нет! Добавь свою первую задачу, чтобы начать!",reply_markup = menu_kb)
+    else:
+        await callback.message.answer("Вот ваш список задач. Чтобы удалить задачу, введите ее порядковый номер (например, 1, 2, 3)")
+        d = ""
+        f = 1
+        for i in range(len(b)):
+            d += f"{f}) {b[i][0]}\n"
+            f += 1
+        await callback.message.answer(d)
+        await state.set_state(Deal.delete)
 
 @fsm_router.message(Deal.delete)
 async def deleting_func(message:Message, state:FSMContext):
@@ -136,7 +144,7 @@ async def deleting_func(message:Message, state:FSMContext):
         f += 1
     if message.text in idm:
         name = b[int(message.text) - 1][1]
-        deletings_func(name, id_user)
+        deletings_func(name)
     else:
-        await message.reply("Цифра не верна, операция прервана")
+        await message.reply("Цифра не верна, операция прервана",reply_markup = menu_kb)
         await state.clear()
