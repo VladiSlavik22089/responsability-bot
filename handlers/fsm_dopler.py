@@ -103,7 +103,7 @@ async def get_note_list(callback:CallbackQuery, state: FSMContext):
     id_user = callback.from_user.id
     b = show_deals(id_user)
     if len(b) == 0:
-        await callback.message.answer("Пока что здесь ничего нет! Добавь свою первую задачу, чтобы начать!")
+        await callback.message.answer("Пока что здесь ничего нет! Добавь свою первую задачу, чтобы начать!",reply_markup = menu_kb)
     else:
         await callback.message.answer("Вот список ваших активных дел:")
         d = ""
